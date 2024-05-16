@@ -3,6 +3,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
+import copy
+import sys
+import os
 
 
 def openfile():
@@ -130,8 +133,35 @@ class WordGraph:
             print(f"The bridge words from word1 to word2 are {bridge_words}")
             return bridge_words
 
-    def generateNewText(self, inputText: str):
-        pass
+    def generateNewText(self):
+        """根据bridge word生成新文本"""
+        # 用户输入新句子，将新句子拆分为token
+        line = input("Input text:")
+        for piece in line:
+            if piece in string.punctuation:
+                # 为防止最后打印结果时标点丢失，遍历每个句子的每个字母，如果发现是标点就在前面加一个空格，使其在下一步时形成一个token
+                line = line.replace(piece, f" {piece}")
+        tokens = line.split()
+
+        # token转小写
+        for i in range(len(tokens)):
+            tokens[i] = tokens[i].lower()
+
+        # 查桥接词，查到就放到新文本tokens列表中的对应位置
+        sys.stdout = open(os.devnull, 'w')  # 关闭print输出
+        for i in range(len(tokens) - 1):
+            bridge_words = self.queryBridgeWords(tokens[i], tokens[i+1])
+            if bridge_words != -1:
+                for j in range(len(bridge_words)):
+                    tokens.insert(i+j+1, bridge_words[j])
+        sys.stdout = sys.__stdout__  # 打开print输出
+
+        # 将tokens列表合并为一个句子
+        sentence = str()
+        for token in tokens:
+            sentence = sentence + token + " "
+
+        print(sentence)
 
     def calcShortestPath(self, word1: str, word2: str):
         pass
@@ -144,7 +174,8 @@ def main():
     f = WordGraph()
     f.generateGraph()
     f.showDirectedGraph()
-    f.queryBridgeWords('new', 'To')
+    f.queryBridgeWords('explore', 'new')
+    f.generateNewText()
 
 
 if __name__ == '__main__':
