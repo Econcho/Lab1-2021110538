@@ -5,6 +5,13 @@ import tkinter as tk
 from tkinter import filedialog
 
 
+def openfile():
+    """用户选择文件，返回文件路径"""
+    window = tk.Tk()
+    window.withdraw()
+    return filedialog.askopenfilename()
+
+
 class Edge:
     def __init__(self, start, end, weight: int):
         self.start = start
@@ -55,29 +62,30 @@ class WordGraph:
     def __init__(self):
         self.graph = Graph()
 
-    def showDirectedGraph(self):
-        """用户选择文件，根据文件生成图并打印"""
-        # 选择文件
-        window = tk.Tk()
-        window.withdraw()
-        filepath = filedialog.askopenfilename()
+    def generateGraph(self):
+        """用户选择文件，根据文件生成图，保存在self.graph"""
+        filepath = openfile()
 
         # 将句子去除标点并划分为token
+        tokens = list()
         lines = open(filepath).readlines()
         for i in range(len(lines)):
             for piece in lines[i]:
                 if piece in string.punctuation:
                     lines[i] = lines[i].replace(piece, " ")  # 遍历每个句子的每个字母，如果发现是标点（在string.punctuation）中就替换为空格
-            lines[i] = lines[i].split()
+            tokens = tokens + lines[i].split()
+
+        # token转小写
+        for i in range(len(tokens)):
+            tokens[i] = tokens[i].lower()
 
         # 将token加入图
-        g = nx.Graph()
-        for line in lines:
-            for i in range(len(line) - 1):
-                self.graph.addEdge(start=line[i], end=line[i + 1])
+        for i in range(len(tokens) - 1):
+            self.graph.addEdge(start=tokens[i], end=tokens[i + 1])
 
-        # 画图并保存
-        g = nx.DiGraph()
+    def showDirectedGraph(self):
+        """画self.graph"""
+        g = nx.DiGraph()  # 有向图
         g.add_nodes_from(node for node in self.graph.vertex_dict.keys())
         for i in self.graph.vertex_dict.values():
             i_start_edges = self.graph.edge_list[int(i)]
@@ -95,7 +103,32 @@ class WordGraph:
         plt.show()
 
     def queryBridgeWords(self, word1: str, word2: str):
-        pass  # 深度为2的DFS/BFS即可
+        """查询word1到word2之间的桥接词"""
+        # 转小写
+        word1 = word1.lower()
+        word2 = word2.lower()
+
+        if self.graph.getEdgeList(word1) is None:
+            print("No word1 in graph")
+            return -1
+
+        if self.graph.getEdgeList(word2) is None:
+            print("No word2 in graph")
+            return -1
+
+        bridge_words = list()
+        for edge_1 in self.graph.getEdgeList(word1):
+            word3 = edge_1.end
+            for edge_3 in self.graph.getEdgeList(word3):
+                if word2 == edge_3.end:
+                    bridge_words.append(edge_1.end)
+
+        if len(bridge_words) == 0:
+            print("No bridge words from word1 to word2")
+            return -1
+        else:
+            print(f"The bridge words from word1 to word2 are {bridge_words}")
+            return bridge_words
 
     def generateNewText(self, inputText: str):
         pass
@@ -109,7 +142,9 @@ class WordGraph:
 
 def main():
     f = WordGraph()
+    f.generateGraph()
     f.showDirectedGraph()
+    f.queryBridgeWords('new', 'To')
 
 
 if __name__ == '__main__':
