@@ -6,6 +6,7 @@ from tkinter import filedialog
 import copy
 import sys
 import os
+import random
 
 
 def openfile():
@@ -13,6 +14,13 @@ def openfile():
     window = tk.Tk()
     window.withdraw()
     return filedialog.askopenfilename()
+
+
+def savefile():
+    """用户选择保存文件，返回文件路径"""
+    window = tk.Tk()
+    window.withdraw()
+    return filedialog.asksaveasfilename()
 
 
 class Edge:
@@ -75,7 +83,8 @@ class WordGraph:
         for i in range(len(lines)):
             for piece in lines[i]:
                 if piece in string.punctuation:
-                    lines[i] = lines[i].replace(piece, " ")  # 遍历每个句子的每个字母，如果发现是标点（在string.punctuation）中就替换为空格
+                    # 遍历每个句子的每个字母，如果发现是标点（在string.punctuation）中就替换为空格
+                    lines[i] = lines[i].replace(piece, " ")
             tokens = tokens + lines[i].split()
 
         # token转小写
@@ -164,10 +173,38 @@ class WordGraph:
         print(sentence)
 
     def calcShortestPath(self, word1: str, word2: str):
-        pass
+        # Dijkstra
+        word1 = word1.lower()
+        dis = [1e9 for i in range(len(self.graph.vertex_dict))]
+        dis[self.graph.vertex_dict[word1]] = 0
+        for i in range(len(self.graph.vertex_dict)):
+            for edge in self.graph.edge_list[i]:
+                for j in range(len(self.graph.vertex_dict)):
+                    if edge.end == list(self.graph.vertex_dict.keys())[j]:
+                        dis[j] = min(dis[j], dis[i] + edge.weight)
+        if word2 is None:
+            return dis
+        else:
+            word2 = word2.lower()
+            return dis[self.graph.vertex_dict[word2]]
 
     def randomWalk(self):
-        pass
+        start = random.choice(list(self.graph.vertex_dict.keys()))
+        ret = start
+        edge_tmp = []
+        while True:  # 按Ctrl+C可终止（
+            edge_list = self.graph.getEdgeList(start)
+            # 无出边
+            if edge_list is None or len(edge_list) == 0:
+                break
+            edge = random.choice(edge_list)
+            ret = ret + " " + edge.end
+            start = edge.end
+            # 重复边
+            if edge in edge_tmp:
+                break
+            edge_tmp.append(edge)
+        return ret
 
 
 def main():
@@ -176,6 +213,30 @@ def main():
     f.showDirectedGraph()
     f.queryBridgeWords('explore', 'new')
     f.generateNewText()
+
+    # calcShortestPath
+    line = input('calcShortestPath: input 1 or 2 word(s):')
+    words = line.split()
+    if len(words) == 1:
+        r = f.calcShortestPath(words[0], None)
+        print('Distance from', words[0], 'to other words:')
+        for i in range(len(r)):
+            print(list(f.graph.vertex_dict.keys())[
+                  i], '\t:', r[i] == 1e9 and 'No path' or r[i])
+    elif len(words) == 2:
+        r = f.calcShortestPath(words[0], words[1])
+        print('Distance from', words[0], 'to',
+              words[1], ': ', r == 1e9 and 'No path' or r)
+    else:
+        print('Invalid input')
+
+    # randomWalk
+    rw = f.randomWalk()
+    print('Random walk:', rw)
+    f = savefile()
+    if f != '':
+        with open(f, 'w') as file:
+            file.write(rw)
 
 
 if __name__ == '__main__':
