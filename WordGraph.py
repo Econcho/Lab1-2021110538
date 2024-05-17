@@ -74,10 +74,8 @@ class WordGraph:
     def __init__(self):
         self.graph = Graph()
 
-    def generateGraph(self):
+    def generateGraph(self, filepath):
         """用户选择文件，根据文件生成图，保存在self.graph"""
-        filepath = openfile()
-
         # 将句子去除标点并划分为token
         tokens = list()
         lines = open(filepath).readlines()
@@ -122,12 +120,10 @@ class WordGraph:
         word2 = word2.lower()
 
         if self.graph.getEdgeList(word1) is None:
-            print("No word1 in graph")
             return -1
 
         if self.graph.getEdgeList(word2) is None:
-            print("No word2 in graph")
-            return -1
+            return -2
 
         bridge_words = list()
         for edge_1 in self.graph.getEdgeList(word1):
@@ -137,16 +133,13 @@ class WordGraph:
                     bridge_words.append(edge_1.end)
 
         if len(bridge_words) == 0:
-            print("No bridge words from word1 to word2")
-            return -1
+            return -3
         else:
-            print(f"The bridge words from word1 to word2 are {bridge_words}")
             return bridge_words
 
-    def generateNewText(self):
+    def generateNewText(self, line):
         """根据bridge word生成新文本"""
-        # 用户输入新句子，将新句子拆分为token
-        line = input("Input text:")
+        # 将新句子拆分为token
         for piece in line:
             if piece in string.punctuation:
                 # 为防止最后打印结果时标点丢失，遍历每个句子的每个字母，如果发现是标点就在前面加一个空格，使其在下一步时形成一个token
@@ -158,20 +151,18 @@ class WordGraph:
             tokens[i] = tokens[i].lower()
 
         # 查桥接词，查到就放到新文本tokens列表中的对应位置
-        sys.stdout = open(os.devnull, 'w')  # 关闭print输出
         for i in range(len(tokens) - 1):
-            bridge_words = self.queryBridgeWords(tokens[i], tokens[i+1])
-            if bridge_words != -1:
+            bridge_words = self.queryBridgeWords(tokens[i], tokens[i + 1])
+            if bridge_words not in [-1, -2, -3]:
                 for j in range(len(bridge_words)):
-                    tokens.insert(i+j+1, bridge_words[j])
-        sys.stdout = sys.__stdout__  # 打开print输出
+                    tokens.insert(i + j + 1, bridge_words[j])
 
         # 将tokens列表合并为一个句子
         sentence = str()
         for token in tokens:
             sentence = sentence + token + " "
 
-        print(sentence)
+        return sentence
 
     def calcShortestPath(self, word1: str, word2: str):
         # 堆优化Dijkstra
@@ -217,10 +208,28 @@ class WordGraph:
 
 def main():
     f = WordGraph()
-    f.generateGraph()
+
+    # generateGraph
+    f.generateGraph(openfile())
+
+    # showDirectedGraph
     f.showDirectedGraph()
-    f.queryBridgeWords('explore', 'new')
-    f.generateNewText()
+
+    # queryBridgeWords
+    bridge_words = f.queryBridgeWords('to', 'seek')
+    if bridge_words == -1:
+        print("No word1 in graph")
+    elif bridge_words == -2:
+        print("No word2 in graph")
+    elif bridge_words == -3:
+        print("No bridge words from word1 to word2")
+    else:
+        print(f"The bridge words from word1 to word2 are {bridge_words}")
+
+    # generateNewText
+    line = input("Input text:")
+    new_sentence = f.generateNewText(line)
+    print(new_sentence)
 
     # calcShortestPath
     line = input('calcShortestPath: input 1 or 2 word(s):')
