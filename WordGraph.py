@@ -7,6 +7,7 @@ import copy
 import sys
 import os
 import random
+import queue
 
 
 def openfile():
@@ -173,15 +174,22 @@ class WordGraph:
         print(sentence)
 
     def calcShortestPath(self, word1: str, word2: str):
-        # Dijkstra
+        # 堆优化Dijkstra
         word1 = word1.lower()
-        dis = [1e9 for i in range(len(self.graph.vertex_dict))]
+        dis = [1e9] * len(self.graph.vertex_dict)
         dis[self.graph.vertex_dict[word1]] = 0
-        for i in range(len(self.graph.vertex_dict)):
-            for edge in self.graph.edge_list[i]:
-                for j in range(len(self.graph.vertex_dict)):
-                    if edge.end == list(self.graph.vertex_dict.keys())[j]:
-                        dis[j] = min(dis[j], dis[i] + edge.weight)
+        vis = [False] * len(self.graph.vertex_dict)
+        q = queue.PriorityQueue()
+        q.put((0, word1))
+        while not q.empty():
+            d, u = q.get()
+            if vis[self.graph.vertex_dict[u]]:
+                continue
+            vis[self.graph.vertex_dict[u]] = True
+            for edge in self.graph.getEdgeList(u):
+                if dis[self.graph.vertex_dict[edge.end]] > dis[self.graph.vertex_dict[u]] + edge.weight:
+                    dis[self.graph.vertex_dict[edge.end]] = dis[self.graph.vertex_dict[u]] + edge.weight
+                    q.put((dis[self.graph.vertex_dict[edge.end]], edge.end))
         if word2 is None:
             return dis
         else:
