@@ -6,9 +6,11 @@ from tkinter import filedialog
 import random
 import queue
 
+# REVISE 1 at C4
 '''
 Revise 2 at B1
 '''
+
 
 def openfile():
     """用户选择文件，返回文件路径"""
