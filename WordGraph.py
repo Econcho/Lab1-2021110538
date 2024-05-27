@@ -6,8 +6,7 @@ from tkinter import filedialog
 import random
 import queue
 
-# REVISE 1
-# REVISE 2
+# REVISE 1 at C4
 
 def openfile():
     """用户选择文件，返回文件路径"""
